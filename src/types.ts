@@ -23,9 +23,14 @@ export interface FoodLog {
   meal: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   name: string;
   fists: number;
+  grams?: number;
+  unit?: 'fist' | 'gram';
   calories: number;
   adjustedCalories: number;
-  foodType: 'normal' | 'stir_fried' | 'takeout' | 'fried';
+  protein: number;
+  carbs: number;
+  fat: number;
+  foodType: 'normal' | 'stir_fried' | 'takeout' | 'fried' | 'braised' | 'cold';
 }
 
 export interface ExerciseLog {
@@ -41,8 +46,11 @@ export interface FoodItem {
   name: string;
   gramsPerFist: number;
   caloriesPer100g: number;
-  foodType: 'normal' | 'stir_fried' | 'takeout' | 'fried';
-  category: 'staple' | 'meat' | 'vegetable' | 'egg_dairy' | 'fruit' | 'snack';
+  proteinPer100g: number;
+  carbsPer100g: number;
+  fatPer100g: number;
+  foodType: 'normal' | 'stir_fried' | 'takeout' | 'fried' | 'braised' | 'cold';
+  category: 'staple' | 'meat' | 'vegetable' | 'egg_dairy' | 'fruit' | 'snack' | 'soy' | 'seafood' | 'drink';
 }
 
 export interface ExerciseItem {
@@ -83,6 +91,8 @@ export const FOOD_TYPE_LABELS: Record<string, string> = {
   stir_fried: '炒菜',
   takeout: '外卖',
   fried: '炸物',
+  braised: '卤制',
+  cold: '凉拌',
 };
 
 export const FOOD_TYPE_MODIFIER: Record<string, number> = {
@@ -90,4 +100,6 @@ export const FOOD_TYPE_MODIFIER: Record<string, number> = {
   stir_fried: 1.15,
   takeout: 1.20,
   fried: 1.25,
+  braised: 1.10,
+  cold: 0.95,
 };

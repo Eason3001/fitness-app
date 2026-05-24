@@ -19,6 +19,8 @@ export function FoodPage() {
   const [category, setCategory] = useState('all');
   const [selectedFood, setSelectedFood] = useState('');
   const [fists, setFists] = useState(1);
+  const [grams, setGrams] = useState(200);
+  const [unit, setUnit] = useState<'fist' | 'gram'>('fist');
   const [foodType, setFoodType] = useState('normal');
   const meals: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 
@@ -30,16 +32,45 @@ export function FoodPage() {
 
   const handleAdd = () => {
     const food = foodDb.find(f => f.name === selectedFood);
-    if (!food || fists <= 0) return;
-    const { adjustedCalories } = calcFoodCalories(food.caloriesPer100g, food.gramsPerFist, fists, FOOD_TYPE_MODIFIER[foodType] ?? 1);
+    if (!food) return;
+
+    let calories: number;
+    let adjustedCalories: number;
+    let actualGrams: number;
+    const modifier = FOOD_TYPE_MODIFIER[foodType] ?? 1;
+
+    if (unit === 'fist') {
+      if (fists <= 0) return;
+      actualGrams = food.gramsPerFist * fists;
+      const result = calcFoodCalories(food.caloriesPer100g, food.gramsPerFist, fists, modifier);
+      calories = result.calories;
+      adjustedCalories = result.adjustedCalories;
+    } else {
+      if (grams <= 0) return;
+      actualGrams = grams;
+      calories = Math.round((food.caloriesPer100g / 100) * grams);
+      adjustedCalories = Math.round(calories * modifier);
+    }
+
     const log: FoodLog = {
-      id: generateId(), date: today(), meal, name: food.name, fists,
-      calories: Math.round((food.caloriesPer100g / 100) * food.gramsPerFist * fists),
-      adjustedCalories, foodType: foodType as FoodLog['foodType'],
+      id: generateId(),
+      date: today(),
+      meal,
+      name: food.name,
+      fists: unit === 'fist' ? fists : 0,
+      grams: unit === 'gram' ? grams : 0,
+      unit,
+      calories,
+      adjustedCalories,
+      protein: Math.round((food.proteinPer100g / 100) * actualGrams),
+      carbs: Math.round((food.carbsPer100g / 100) * actualGrams),
+      fat: Math.round((food.fatPer100g / 100) * actualGrams),
+      foodType: foodType as FoodLog['foodType'],
     };
     addFoodLog(log);
     setSelectedFood('');
     setFists(1);
+    setGrams(200);
   };
 
   return (
@@ -54,7 +85,9 @@ export function FoodPage() {
               <div>
                 <span className="text-xs text-gray-400 mr-2">{MEAL_LABELS[log.meal]}</span>
                 <span>{log.name}</span>
-                <span className="text-gray-400 ml-1">×{log.fists}拳头</span>
+                <span className="text-gray-400 ml-1">
+                  {log.unit === 'gram' && log.grams ? `${log.grams}g` : `×${log.fists}拳头`}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium">{log.adjustedCalories} kcal</span>
@@ -95,21 +128,55 @@ export function FoodPage() {
             <button key={f.name} onClick={() => setSelectedFood(f.name)}
               className={`w-full text-left px-3 py-2.5 text-sm border-b border-gray-50 last:border-0 flex justify-between ${selectedFood === f.name ? 'bg-indigo-50 text-indigo-700' : ''}`}>
               <span>{f.name}</span>
-              <span className="text-gray-400 text-xs">{f.caloriesPer100g}kcal/100g · {f.gramsPerFist}g/拳头</span>
+              <span className="text-gray-400 text-xs">{f.caloriesPer100g}kcal/100g · 约{f.gramsPerFist}g/拳头</span>
             </button>
           ))}
         </div>
 
         {selectedFood && (
           <>
-            <label className="text-xs text-gray-500 mb-1 block">份量（拳头）</label>
-            <div className="flex items-center gap-2 mb-3">
-              <button onClick={() => setFists(Math.max(0.5, fists - 0.5))}
-                className="w-10 h-10 rounded-full bg-gray-100 text-lg font-bold">-</button>
-              <span className="text-lg font-bold min-w-[3rem] text-center">{fists}</span>
-              <button onClick={() => setFists(fists + 0.5)}
-                className="w-10 h-10 rounded-full bg-gray-100 text-lg font-bold">+</button>
+            <label className="text-xs text-gray-500 mb-1 block">计量方式</label>
+            <div className="flex gap-1 mb-3">
+              {([{ k: 'fist', l: '拳头' }, { k: 'gram', l: '克(g)' }] as const).map(u => (
+                <button key={u.k} onClick={() => setUnit(u.k)}
+                  className={`flex-1 py-2 rounded-lg text-xs font-medium ${unit === u.k ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                  {u.l}
+                </button>
+              ))}
             </div>
+
+            {unit === 'fist' ? (
+              <>
+                <label className="text-xs text-gray-500 mb-1 block">份量（拳头）</label>
+                <div className="flex items-center gap-2 mb-3">
+                  <button onClick={() => setFists(Math.max(0.5, fists - 0.5))}
+                    className="w-10 h-10 rounded-full bg-gray-100 text-lg font-bold">-</button>
+                  <span className="text-lg font-bold min-w-[3rem] text-center">{fists}</span>
+                  <button onClick={() => setFists(fists + 0.5)}
+                    className="w-10 h-10 rounded-full bg-gray-100 text-lg font-bold">+</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <label className="text-xs text-gray-500 mb-1 block">重量（克）</label>
+                <div className="flex items-center gap-2 mb-3">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={grams}
+                    onChange={e => setGrams(Number(e.target.value) || 0)}
+                    className="w-24 p-2.5 border border-gray-200 rounded-lg text-lg font-bold text-center focus:outline-none focus:border-indigo-400"
+                  />
+                  <span className="text-gray-500 text-sm">克 (g)</span>
+                </div>
+              </>
+            )}
+
+            {unit === 'fist' && selectedFood && (
+              <p className="text-xs text-gray-400 mb-3">
+                约 {Math.round(foodDb.find(f => f.name === selectedFood)!.gramsPerFist * fists)}g
+              </p>
+            )}
 
             <label className="text-xs text-gray-500 mb-1 block">烹饪方式</label>
             <div className="flex gap-1 flex-wrap mb-3">

@@ -3,10 +3,27 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+import type { Plugin } from 'vite'
+
+function mobileconfigMimePlugin(): Plugin {
+  return {
+    name: 'mobileconfig-mime',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url?.endsWith('.mobileconfig')) {
+          res.setHeader('Content-Type', 'application/x-apple-aspen-config')
+        }
+        next()
+      })
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    mobileconfigMimePlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {

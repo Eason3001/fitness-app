@@ -7,7 +7,7 @@ import { Macronutrients } from '../components/MacroBar';
 export function HomePage() {
   const { data } = useAppData();
   const navigate = useNavigate();
-  const { totalFoodCalories, totalReturnedCalories } = useTodayLogs(data.foodLogs, data.exerciseLogs);
+  const { totalFoodCalories, totalReturnedCalories, totalProtein, totalCarbs, totalFat } = useTodayLogs(data.foodLogs, data.exerciseLogs);
 
   if (!data.profile || !data.plan) {
     return (
@@ -50,9 +50,9 @@ export function HomePage() {
       <div className="bg-white rounded-xl p-4 shadow-sm">
         <h2 className="text-sm font-semibold mb-3">每日营养素目标</h2>
         <Macronutrients
-          protein={{ current: 0, target: plan.protein }}
-          carbs={{ current: 0, target: plan.carbs }}
-          fat={{ current: 0, target: plan.fat }}
+          protein={{ current: totalProtein, target: plan.protein }}
+          carbs={{ current: totalCarbs, target: plan.carbs }}
+          fat={{ current: totalFat, target: plan.fat }}
         />
       </div>
     </div>
